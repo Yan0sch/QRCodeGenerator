@@ -13,38 +13,35 @@ namespace qr_code
      * The encoding mode depends on what kind of data you want to store.
      * There are two more encoding modes: Kanji Mode and ECI Mode
      */
-    public class Mode
+    public enum Mode
     {
-        public const byte numeric = 0b0001;             // 0..9
-        public const byte alphanumeric = 0b0010;        // 0..9, A..B, $%*+-./: and space
-        const byte byte_mode = 0b0100;                  // ISO-8859-1
+        numeric,             // 0..9
+        alphanumeric,        // 0..9, A..B, $%*+-./: and space
+        byte_mode                  // ISO-8859-1
     }
-    public class ErrorCorrection
+    public enum ErrorCorrection
     {    // Error Correction Level in %
-        public const byte L = 7;
-        public const byte M = 15;
-        public const byte Q = 25;
-        public const byte H = 30;
+        L, M, Q, H
     }
 
     // Different versions of qr-codes expect different sizes of the character count indicator
-    public class Version1To9
+    public enum Version1To9 : int
     {
-        public const byte numeric = 10;
-        public const byte alphanumeric = 9;
-        public const byte byte_mode = 8;
+        numeric = 10,
+        alphanumeric = 9,
+        byte_mode = 8
     }
-    public class Version10To26
+    public enum Version10To26 : int
     {
-        public const byte numeric = 12;
-        public const byte alphanumeric = 11;
-        public const byte byte_mode = 16;
+        numeric = 12,
+        alphanumeric = 11,
+        byte_mode = 16
     }
-    public class Version27To40
+    public enum Version27To40 : int
     {
-        public const byte numeric = 14;
-        public const byte alphanumeric = 13;
-        public const byte byte_mode = 16;
+        numeric = 14,
+        alphanumeric = 13,
+        byte_mode = 16
     }
 
 
@@ -53,21 +50,21 @@ namespace qr_code
     public class finder_pattern
     {
         public static byte[,] pattern1 = new byte[,] {
-            {1,1,1,1,1,1,1},
-            {1,2,2,2,2,2,1},
-            {1,2,1,1,1,2,1},
-            {1,2,1,1,1,2,1},
-            {1,2,1,1,1,2,1},
-            {1,2,2,2,2,2,1},
-            {1,1,1,1,1,1,1}
+            {0,0,0,0,0,0,0},
+            {0,1,1,1,1,1,0},
+            {0,1,0,0,0,1,0},
+            {0,1,0,0,0,1,0},
+            {0,1,0,0,0,1,0},
+            {0,1,1,1,1,1,0},
+            {0,0,0,0,0,0,0}
         };
 
         public static byte[,] pattern2 = new byte[,] {
-            {1,1,1,1,1},
-            {1,2,2,2,1},
-            {1,2,1,2,1},
-            {1,2,2,2,1},
-            {1,1,1,1,1}
+            {0,0,0,0,0},
+            {0,1,1,1,0},
+            {0,1,0,1,0},
+            {0,1,1,1,0},
+            {0,0,0,0,0}
         };
     }
 }
