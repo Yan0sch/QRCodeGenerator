@@ -17,7 +17,7 @@ namespace qr_code
         public int mask_pattern;
 
         // qr-code-matrix: format is [y,x]
-        private byte[,] qr_code;
+        public byte[,] qr_code { get; private set; }
         private int size;
 
 
@@ -42,14 +42,59 @@ namespace qr_code
 
         }
 
-        public byte[,] generate()
+        public Generator(string message)
         {
-            InsertPatterns();
-            InstertFormatAndVersionInformation();
-            return qr_code;
+            // TODO implement an constructor, that choose automatically the necessary mode and version
         }
 
-        private void InstertFormatAndVersionInformation()
+        public void generate()
+        {
+            InsertPatterns();
+            InsertFormatAndVersionInformation();
+            InsertData();
+        }
+
+        private void InsertData()
+        {
+            // first we add the mode indicator and the character count indicator (cci)
+            // numeric := 0001, alphanumeric := 0010, byte := 0100
+            // information about the length of the character count indicator is in QRInformation.cs
+            int capacity = Capacities.getCapacity(version, errorCorrection, mode);
+            if (capacity < message.Length) throw new FormatException("The capacity of the qr-code is to low!");
+            
+            byte[] indicator = getIndicator();
+            foreach (byte i in indicator)
+            {
+                Console.Write(i);
+            }
+            Console.Write("\n");
+        }
+
+        private byte[] getIndicator()
+        {
+            byte[] indicator = new byte[0];
+            if (version <= 9)
+            {
+                switch (mode)
+                {
+                    case Mode.numeric: indicator = new byte[]       { 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; break;
+                    case Mode.alphanumeric: indicator = new byte[]  { 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; break;
+                    case Mode.byte_mode: indicator = new byte[]     { 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; break;
+                }
+            }
+            if (version > 7) throw new NotImplementedException("Version 7 or higher is not implemented");
+
+            int m_len = message.Length;
+            int idx = indicator.Length;
+            while (m_len != 0)
+            {
+                indicator[--idx] = (byte)(m_len % 2);
+                m_len /= 2;
+            }
+            return indicator;
+        }
+
+        private void InsertFormatAndVersionInformation()
         {
             byte[] format_string = new byte[15];
 
@@ -83,14 +128,14 @@ namespace qr_code
             byte[] generatorPolynomial = { 1, 0, 1, 0, 0, 1, 1, 0, 1, 1, 1 };
             int firstBit = 0;
             removeZeros(errorCorrectionBits, out firstBit);
-                
+
             while (errorCorrectionBits.Length - firstBit > generatorPolynomial.Length)
             {
                 byte[] paddedPolynomial = new byte[errorCorrectionBits.Length - firstBit];
                 padByteArray(generatorPolynomial, paddedPolynomial);
                 xorByteArray(paddedPolynomial, errorCorrectionBits, firstBit);
                 removeZeros(errorCorrectionBits, out firstBit);
-                
+
             }
 
             // put format string and error correction bits together
@@ -105,17 +150,17 @@ namespace qr_code
 
             // write the format string to the qr-code
             int offset = 0;
-            for (int i = 0; i < format_string.Length/2; i++)
+            for (int i = 0; i < format_string.Length / 2; i++)
             {
-                if(qr_code[8, i+offset]!=0xff) offset++;
-                qr_code[8, i+offset] = format_string[i];
+                if (qr_code[8, i + offset] != 0xff) offset++;
+                qr_code[8, i + offset] = format_string[i];
                 qr_code[size - i - 2, 8] = format_string[i];
             }
             offset = 0;
-            for (int i = 0; i < format_string.Length/2+1; i++)
+            for (int i = 0; i < format_string.Length / 2 + 1; i++)
             {
-                if(qr_code[i+offset,8]!=0xff) offset++;
-                qr_code[i+offset,8] = format_string[format_string.Length - i - 1];
+                if (qr_code[i + offset, 8] != 0xff) offset++;
+                qr_code[i + offset, 8] = format_string[format_string.Length - i - 1];
                 qr_code[8, size - i - 2] = format_string[format_string.Length - i - 1];
             }
         }
@@ -129,8 +174,7 @@ namespace qr_code
         // This function pad a given array to the left and create a new array with the given length
         private void padByteArray(byte[] arr, byte[] destinationArray)
         {
-            Console.WriteLine("{0}, {1}", arr.Length, destinationArray.Length);
-            if (arr.Length > destinationArray.Length) throw new ArgumentException("Destination array must be larger.", nameof(arr) +", "+ nameof(destinationArray));
+            if (arr.Length > destinationArray.Length) throw new ArgumentException("Destination array must be larger.", nameof(arr) + ", " + nameof(destinationArray));
             for (int i = 0; i < arr.Length; i++)
             {
                 destinationArray[i] = arr[i];
@@ -153,7 +197,7 @@ namespace qr_code
             // insert finder patterns
             // 0 = black, 1 = white
 
-            int pattern1_size = finder_pattern.pattern1.GetUpperBound(0) + 1;   // width, and hight are equal
+            int pattern1_size = finder_pattern.pattern1.GetUpperBound(0) + 1;   // width, and height are equal
             for (int y = 0; y < pattern1_size; y++)
             {
                 for (int x = 0; x < pattern1_size; x++)
@@ -170,9 +214,9 @@ namespace qr_code
                     qr_code[size - y - 2, x] = finder_pattern.pattern1[y, x];
                     qr_code[size - pattern1_size - 2, x] = 0;           // add a white stripe to the upper end
                 }
-                qr_code[y, pattern1_size] = 0;                          // add a white stripe to the right side of the left, upper pattern
-                qr_code[y, size - pattern1_size - 2] = 0;               // add a white stripe to the left side of the right, upper pattern
-                qr_code[size - y - 2, pattern1_size] = 0;               // add a white stripe to the right side of the left, lower pattern
+                qr_code[y, pattern1_size] = 0;                          // add a white stripe to the right side of the left upper pattern
+                qr_code[y, size - pattern1_size - 2] = 0;               // add a white stripe to the left side of the right upper pattern
+                qr_code[size - y - 2, pattern1_size] = 0;               // add a white stripe to the right side of the left lower pattern
             }
             qr_code[pattern1_size, pattern1_size] = 0;
             qr_code[size - pattern1_size - 2, pattern1_size] = 0;
@@ -183,7 +227,7 @@ namespace qr_code
             if (version >= 2)
             {
                 // TODO implement patterns for version 7 and higher
-                if (version >= 7) throw new ArgumentOutOfRangeException(nameof(version), "Version 7 or higher is not implemented!");
+                if (version >= 7) throw new NotImplementedException("Version 7 or higher is not implemented!");
 
                 int pattern2_size = finder_pattern.pattern2.GetUpperBound(0) + 1;
                 (int, int) pattern2_pos = (size - 10, size - 10);          // format: (y,x)

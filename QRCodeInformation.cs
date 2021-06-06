@@ -33,24 +33,7 @@ namespace qr_code
     }
 
     // Different versions of qr-codes expect different sizes of the character count indicator
-    public enum Version1To9 : int
-    {
-        numeric = 10,
-        alphanumeric = 9,
-        byte_mode = 8
-    }
-    public enum Version10To26 : int
-    {
-        numeric = 12,
-        alphanumeric = 11,
-        byte_mode = 16
-    }
-    public enum Version27To40 : int
-    {
-        numeric = 14,
-        alphanumeric = 13,
-        byte_mode = 16
-    }
+    
 
 
     // Two finder patterns that each qr-code need.
